@@ -265,8 +265,8 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261030b"></script>
-<script src="engine.js?v=20261030b"></script>
+<script src="knowledge.js?v=20261030d"></script>
+<script src="engine.js?v=20261030d"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){
@@ -511,10 +511,11 @@ function ask(text){
   }, 340);
 }
 
-/* ============ AI 增强（DeepSeek） ============ */
+/* ============ AI 增强（DeepSeek，经 Cloudflare Worker 代理，Key 不暴露） ============ */
 const AI_CONFIG = {
-  key: "sk-a2534417f66544acae94669b4cdf4b57",
-  url: "https://api.deepseek.com/chat/completions",
+  /* 部署 Cloudflare Worker 后，把下面换成你的 Worker 地址，
+     形如 https://zhuce-qa-proxy.你的子域名.workers.dev  */
+  proxyUrl: "https://zhuce-qa-proxy.liupengjin1207.workers.dev",
   model: "deepseek-chat"
 };
 /* 对话记忆（最近4轮） */
@@ -565,11 +566,15 @@ ${materials}`;
   const streamEl = card.querySelector('#ai-stream');
 
   try {
-    const resp = await fetch(AI_CONFIG.url, {
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 30000); // 30秒超时保护
+    const resp = await fetch(AI_CONFIG.proxyUrl, {
       method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':'Bearer '+AI_CONFIG.key},
-      body: JSON.stringify({model: AI_CONFIG.model, messages: msgs, stream: true, temperature: 0.3, max_tokens: 1200})
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model: AI_CONFIG.model, messages: msgs, stream: true, temperature: 0.3, max_tokens: 1200}),
+      signal: ctrl.signal
     });
+    clearTimeout(timer);
     if (!resp.ok){
       throw new Error('HTTP ' + resp.status + (resp.status===402 ? '：余额不足' : ''));
     }
