@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#1a5fb4">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="注册答疑">
 <link rel="icon" type="image/png" href="icon-192.png">
 <title>2026年黄埔区教师资格定期注册 · 智能答疑</title>
 <style>
@@ -232,8 +237,14 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261029c"></script>
-<script src="engine.js?v=20261029c"></script>
+<script src="knowledge.js?v=20261030a"></script>
+<script src="engine.js?v=20261030a"></script>
+<script>
+/* 注册 Service Worker（PWA 可安装资格） */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+</script>
 <script>
 const chat = document.getElementById('chat');
 const input = document.getElementById('q');
