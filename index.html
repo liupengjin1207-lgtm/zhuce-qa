@@ -96,6 +96,8 @@
   }
   .ans-src .tag{background:var(--brand-light);color:var(--brand);padding:1px 7px;border-radius:20px;font-size:11px}
 
+  .ai-badge{background:#7c3aed;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;margin-left:2px}
+
   /* 相关追问 */
   .related{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
   .related-t{font-size:11.5px;color:var(--text2);margin-bottom:7px}
@@ -194,7 +196,7 @@
     <textarea id="q" rows="1" placeholder="输入你的问题，如：我2021年注册的今年要不要注册？"></textarea>
     <button id="send" aria-label="发送">➤</button>
   </div>
-  <div class="foot-tip">答案均来自官方培训材料原文，特殊情况请咨询区注册工作办公室</div>
+  <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
 <script src="knowledge.js"></script>
@@ -330,31 +332,119 @@ function ask(text){
 
     if (r.type === 'answer'){
       addBot(renderAnswer(r.main, r.others));
-    } else if (r.type === 'candidates'){
-      let h = `<div class="fallback">我可能没完全理解你的问题，你是在问下面哪一个？</div><div class="cand-list">`;
+      rememberHistory(text, r.main.a);
+    } else {
+      // 低置信度 → 大模型增强回答（基于检索到的原文片段）
+      aiAnswer(text, r);
+    }
+  }, 340);
+}
+
+/* ============ AI 增强（DeepSeek） ============ */
+const AI_CONFIG = {
+  key: "sk-a2534417f66544acae94669b4cdf4b57",
+  url: "https://api.deepseek.com/chat/completions",
+  model: "deepseek-chat"
+};
+/* 对话记忆（最近4轮） */
+const HISTORY = [];
+function rememberHistory(q, a){
+  HISTORY.push({role:"user", content:q}, {role:"assistant", content:a});
+  if (HISTORY.length > 8) HISTORY.splice(0, HISTORY.length - 8);
+}
+
+async function aiAnswer(text, r){
+  // 取检索 top5 原文片段作为依据
+  const ctx = (r.list ? r.list.map(x=>x.item) : [])
+    .concat(KNOWLEDGE.slice(0, 0));
+  const top = (typeof search === 'function' ? search(text, 5) : []).map(x=>x.item);
+  const pool = (ctx.length ? ctx : top);
+  const materials = (top.length ? top : pool)
+    .map((k,i)=>`【片段${i+1}】${k.q}\n${k.a}\n（出处：${k.src}）`).join('\n\n');
+
+  const sys = `你是"2026年黄埔区教师资格定期注册"答疑助手。严格依据下面提供的培训材料片段回答用户问题。
+
+规则：
+1. 只能依据材料片段作答，禁止编造材料里没有的规定、时间、数字
+2. 回答要口语化、条理清晰，重点内容加粗
+3. 回答末尾标注所依据的出处（如：依据：第X页）
+4. 如果材料片段确实没有覆盖用户的问题，直接回答"这个问题培训材料里没有明确写到，建议咨询区教师资格定期注册工作办公室"，不要推测
+5. 结合对话历史理解代词和省略（如"那产假呢"指上一个话题）
+
+培训材料片段：
+${materials}`;
+
+  const msgs = [{role:"system", content:sys},
+    ...HISTORY.slice(-4),
+    {role:"user", content:text}];
+
+  // 创建带流式输出的卡片
+  const card = document.createElement('div');
+  card.className = 'msg bot';
+  card.innerHTML = `<div class="bot-wrap">
+      <div class="bot-avatar"><span class="dot">AI</span>注册答疑助手 <span class="ai-badge">AI深度回答</span></div>
+      <div class="card ans"><div class="ans-body" id="ai-stream"><div class="typing"><i></i><i></i><i></i></div></div></div>
+    </div>`;
+  chat.appendChild(card);
+  scrollDown();
+  const streamEl = card.querySelector('#ai-stream');
+
+  try {
+    const resp = await fetch(AI_CONFIG.url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+AI_CONFIG.key},
+      body: JSON.stringify({model: AI_CONFIG.model, messages: msgs, stream: true, temperature: 0.3, max_tokens: 1200})
+    });
+    if (!resp.ok){
+      throw new Error('HTTP ' + resp.status + (resp.status===402 ? '：余额不足' : ''));
+    }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '';
+    streamEl.innerHTML = '';
+    while (true){
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const ln of lines){
+        if (!ln.startsWith('data:')) continue;
+        const data = ln.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const j = JSON.parse(data);
+          const delta = j.choices?.[0]?.delta?.content || '';
+          if (delta){
+            full += delta;
+            streamEl.innerHTML = md(full);
+            scrollDown(true);
+          }
+        } catch(e){}
+      }
+    }
+    rememberHistory(text, full);
+    if (!full) throw new Error('空回复');
+  } catch(err){
+    // 失败 → 回退到原有候选/兜底逻辑
+    let h;
+    if (r && r.type === 'candidates' && r.list.length){
+      h = `<div class="fallback">我可能没完全理解你的问题，你是在问下面哪一个？</div><div class="cand-list">`;
       for (const c of r.list){
         h += `<button class="cand" data-id="${c.item.id}"><span class="c-cat">${esc(c.item.cat)}</span>${esc(c.item.q)}</button>`;
       }
       h += `</div>`;
-      addBot(h);
     } else {
-      // 问候/闲聊/无关问题
-      if (/^(你好|您好|hi|hello|在吗|嗨|哈喽)/i.test(text)) {
-        addBot(`<div class="fallback">你好！我是 2026 年教师资格定期注册的答疑助手 😊<br>关于注册范围、条件、时间、国网操作等问题都可以直接问我。</div>`);
-      } else if (/(谢谢|感谢|辛苦|多谢|thanks)/i.test(text)) {
-        addBot(`<div class="fallback">不客气！如果还有其他关于定期注册的问题，随时问我 😊</div>`);
-      } else {
-        let h = `<div class="fallback"><span class="big">这个问题材料里没有明确写到</span>
-          为避免给你错误信息，我不做推测。建议你：</div>
-          <div class="fb-tip">
-          ① 换个说法再问一次（如带上「首次注册」「继续教育」「暂缓」等关键词）<br>
-          ② 直接咨询<b>本区教师资格定期注册工作负责人</b><br>
-          ③ 或查看培训材料原文对应章节
-          </div>`;
-        addBot(h);
-      }
+      h = `<div class="fallback"><span class="big">这个问题材料里没有明确写到</span>
+        为避免给你错误信息，我不做推测。建议你：</div>
+        <div class="fb-tip">
+        ① 换个说法再问一次（如带上「首次注册」「继续教育」「暂缓」等关键词）<br>
+        ② 直接咨询<b>本区教师资格定期注册工作负责人</b><br>
+        ③ 或查看培训材料原文对应章节
+        </div>`;
     }
-  }, 340);
+    streamEl.closest('.card').innerHTML = `<div class="ans-body">${h}</div>`;
+  }
 }
 
 /* 事件绑定 */
