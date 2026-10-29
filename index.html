@@ -124,17 +124,45 @@
   .ai-btn:active{background:#ece3fc;transform:scale(.97)}
   .ai-btn.loading{color:#9a86c4;cursor:wait}
 
-  /* 添加到桌面引导 */
-  .pwa-tip{
-    position:relative;background:linear-gradient(135deg,#eef4fc,#f7f9ff);border:1px solid #cfdff5;
-    border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.7;color:var(--text2);
-    margin:0 0 12px;
+  /* 添加到桌面引导：底部悬浮横幅 */
+  .pwa-banner{
+    position:fixed;left:12px;right:12px;bottom:76px;z-index:60;
+    background:linear-gradient(135deg,#1a5fb4,#3f83d8);color:#fff;
+    border-radius:14px;padding:12px 14px;box-shadow:0 6px 22px rgba(26,95,180,.35);
+    display:flex;align-items:center;gap:11px;
+    animation:pwaUp .35s ease;
   }
-  .pwa-tip b{color:var(--brand-dark)}
-  .pwa-close{
-    position:absolute;top:6px;right:9px;border:0;background:none;color:#b7c1cd;font-size:15px;
-    cursor:pointer;font-family:inherit;padding:2px;
+  @keyframes pwaUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .pwa-ico{font-size:26px;flex-shrink:0}
+  .pwa-txt{flex:1;font-size:12.5px;line-height:1.55;min-width:0}
+  .pwa-txt b{font-size:13.5px;display:block;margin-bottom:1px}
+  .pwa-txt span{opacity:.85}
+  .pwa-go{
+    flex-shrink:0;border:0;background:#fff;color:var(--brand);font-weight:700;font-family:inherit;
+    font-size:13px;padding:8px 13px;border-radius:20px;cursor:pointer;white-space:nowrap;
   }
+  .pwa-go:active{transform:scale(.95)}
+  .pwa-x{
+    position:absolute;top:-9px;right:-4px;border:0;background:#fff;color:#8b97a8;
+    width:22px;height:22px;border-radius:50%;font-size:12px;cursor:pointer;
+    box-shadow:0 1px 5px rgba(0,0,0,.18);font-family:inherit;line-height:1;
+  }
+  /* 教程弹窗 */
+  .pwa-mask{
+    position:fixed;inset:0;background:rgba(15,30,55,.5);z-index:70;
+    display:flex;align-items:center;justify-content:center;padding:22px;
+  }
+  .pwa-modal{
+    background:#fff;border-radius:16px;padding:20px 18px;max-width:360px;width:100%;
+    max-height:78vh;overflow:auto;position:relative;
+  }
+  .pwa-modal h3{margin:0 0 10px;font-size:16px;color:var(--brand-dark)}
+  .pwa-modal ol{margin:0;padding-left:20px;font-size:13.5px;line-height:2;color:var(--text)}
+  .pwa-modal .ok-btn{
+    display:block;width:100%;margin-top:14px;border:0;background:var(--brand);color:#fff;
+    font-size:14px;font-weight:600;padding:10px;border-radius:10px;cursor:pointer;font-family:inherit;
+  }
+  .pwa-modal .mx{position:absolute;top:10px;right:12px;border:0;background:none;color:#9aa4b2;font-size:17px;cursor:pointer;font-family:inherit}
 
   /* 相关追问 */
   .related{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
@@ -237,12 +265,95 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261030a"></script>
-<script src="engine.js?v=20261030a"></script>
+<script src="knowledge.js?v=20261030b"></script>
+<script src="engine.js?v=20261030b"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+
+/* 捕获安装事件：支持的环境下点按钮直接弹系统安装框 */
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  _deferredPrompt = e;
+  // 如果横幅已显示，把按钮文案换成更直接的"一键添加"
+  const go = document.getElementById('pwaGo');
+  if (go) go.textContent = '一键添加 ⚡';
+});
+window.addEventListener('appinstalled', ()=>{
+  hidePwaBanner();
+  try{ localStorage.setItem('pwa_tip_hide', '1'); }catch(e){}
+});
+function hidePwaBanner(){
+  const b = document.getElementById('pwaBanner');
+  if (b) b.remove();
+}
+/* 添加到桌面：底部悬浮横幅 + 一键安装/图文教程 */
+function showPwaBanner(){
+  let hidden = false;
+  try{
+    const t = localStorage.getItem('pwa_tip_hide');
+    hidden = t && (Date.now() - Number(t) < 7*24*3600*1000); // 关闭后 7 天内不再显示
+  }catch(e){}
+  if (hidden || document.getElementById('pwaBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'pwaBanner';
+  banner.className = 'pwa-banner';
+  banner.innerHTML = `
+    <button class="pwa-x" aria-label="关闭">✕</button>
+    <div class="pwa-ico">📲</div>
+    <div class="pwa-txt"><b>添加到手机桌面</b><span>像 App 一样点开就用，不用翻群聊记录</span></div>
+    <button class="pwa-go" id="pwaGo">立即添加</button>`;
+  document.body.appendChild(banner);
+  banner.querySelector('.pwa-x').addEventListener('click', ()=>{
+    try{ localStorage.setItem('pwa_tip_hide', String(Date.now())); }catch(e){}
+    hidePwaBanner();
+  });
+  banner.querySelector('.pwa-go').addEventListener('click', pwaGoClick);
+}
+async function pwaGoClick(){
+  if (_deferredPrompt){
+    // 支持：直接弹系统安装框
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice.catch(()=>({outcome:'dismissed'}));
+    if (outcome === 'accepted'){
+      hidePwaBanner();
+      try{ localStorage.setItem('pwa_tip_hide','1'); }catch(e){}
+    }
+    _deferredPrompt = null;
+    return;
+  }
+  // 不支持 beforeinstallprompt（iOS / 部分国产浏览器）：弹图文教程
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  let steps;
+  if (isIOS){
+    steps = `<li>用 <b>Safari 浏览器</b>打开本页面（其他浏览器不支持）</li>
+      <li>点底部中间的<b>分享按钮 ⬆️</b></li>
+      <li>往下找到并点<b>「添加到主屏幕」</b></li>
+      <li>点右上角<b>「添加」</b>完成</li>`;
+  }else if (isAndroid){
+    steps = `<li>点浏览器<b>右上角 ⋮</b>（或底部菜单 ≡）</li>
+      <li>找到并点<b>「添加到主屏幕」</b>或<b>「添加到桌面」</b></li>
+      <li>在弹窗里点<b>「添加」</b>完成</li>
+      <li>如果找不到该选项，换 <b>Chrome 浏览器</b>打开本页试试</li>`;
+  }else{
+    steps = `<li>点浏览器地址栏右侧的 <b>⊕</b> 或 <b>⋮</b></li>
+      <li>选择<b>「安装」</b>或<b>「添加到主屏幕」</b></li>
+      <li>在弹窗里点<b>「安装」</b>完成</li>`;
+  }
+  const mask = document.createElement('div');
+  mask.className = 'pwa-mask';
+  mask.innerHTML = `<div class="pwa-modal">
+      <button class="mx">✕</button>
+      <h3>📲 添加到桌面 · 图文步骤</h3>
+      <ol>${steps}</ol>
+      <button class="ok-btn">我知道了</button>
+    </div>`;
+  document.body.appendChild(mask);
+  mask.addEventListener('click', e=>{ if (e.target===mask || e.target.classList.contains('ok-btn') || e.target.classList.contains('mx')) mask.remove(); });
 }
 </script>
 <script>
@@ -569,20 +680,7 @@ function attachFb(card, q){
 
 /* 欢迎页 */
 function welcome(){
-  // 添加到桌面引导（关闭后 7 天内不再显示）
-  if (!localStorage.getItem('pwa_tip_hide')){
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isAndroid = /android/i.test(navigator.userAgent);
-    let steps = '';
-    if (isAndroid) steps = '点浏览器右上角 <b>⋮</b> → 选择 <b>「添加到主屏幕」</b>';
-    else if (isIOS) steps = '点浏览器底部 <b>分享按钮 ⬆️</b> → 选择 <b>「添加到主屏幕」</b>';
-    else steps = '点浏览器地址栏右侧的 <b>⊕ 或 ⋮</b> → <b>「安装」/「添加到主屏幕」</b>';
-    const tip = document.createElement('div');
-    tip.className = 'pwa-tip';
-    tip.innerHTML = `<button class="pwa-close" onclick="localStorage.setItem('pwa_tip_hide','1');this.parentNode.remove()">✕</button>
-      💡 <b>建议把答疑助手添加到手机桌面</b>，以后点图标直接用，不用翻聊天记录：<br>${steps}`;
-    chat.appendChild(tip);
-  }
+  showPwaBanner();
   let h = `<div class="welcome">
       <div class="wel-h">你好，我是注册答疑助手 👋</div>
       <div class="wel-s">关于 2026 年教师资格定期注册的问题，<br>直接问我，我按官方培训材料原文回答。</div>
