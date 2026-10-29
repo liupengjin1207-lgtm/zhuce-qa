@@ -358,8 +358,13 @@ async function aiAnswer(text, r){
   const ctx = (r.list ? r.list.map(x=>x.item) : [])
     .concat(KNOWLEDGE.slice(0, 0));
   const top = (typeof search === 'function' ? search(text, 5) : []).map(x=>x.item);
-  const pool = (ctx.length ? ctx : top);
-  const materials = (top.length ? top : pool)
+  // 材料池兜底：检索分数都很低时，强制附上核心枢纽条目，确保 AI 有可对照的政策原文
+  let pool = top;
+  if (!top.length || top[0].score < 8){
+    const hubs = KNOWLEDGE.filter(k=>['hold-1','fail-cases','who-scope','who-2021','cond-diff'].includes(k.id));
+    pool = top.concat(hubs.filter(h=>!top.includes(h)));
+  }
+  const materials = pool
     .map((k,i)=>`【片段${i+1}】${k.q}\n${k.a}\n（出处：${k.src}）`).join('\n\n');
 
   const sys = `你是"2026年黄埔区教师资格定期注册"答疑助手。严格依据下面提供的培训材料片段回答用户问题。
@@ -370,6 +375,7 @@ async function aiAnswer(text, r){
 3. 回答末尾标注所依据的出处（如：依据：第X页）
 4. 如果材料片段确实没有覆盖用户的问题，直接回答"这个问题培训材料里没有明确写到，建议咨询区教师资格定期注册工作办公室"，不要推测
 5. 结合对话历史理解代词和省略（如"那产假呢"指上一个话题）
+6. 用户描述自己的个人情形时（如"有段时间没上班""考核基本合格"），不要只说范围条款，要对照材料中的暂缓注册四种情形和注册不合格四种情形逐条分析，指出最可能适用的情形、判定标准（时长/等次/原因）和后续处理办法，并提醒关键分界点
 
 培训材料片段：
 ${materials}`;
