@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a5fb4">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>2026年黄埔区教师资格定期注册 · 智能答疑</title>
 <style>
   :root{
@@ -97,6 +101,35 @@
   .ans-src .tag{background:var(--brand-light);color:var(--brand);padding:1px 7px;border-radius:20px;font-size:11px}
 
   .ai-badge{background:#7c3aed;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;margin-left:2px}
+
+  /* 反馈按钮 */
+  .fb-btn{
+    display:inline-flex;align-items:center;gap:4px;margin-top:9px;font-size:12px;color:#8a94a3;
+    background:#f5f7fa;border:1px solid var(--line);border-radius:14px;padding:4px 11px;cursor:pointer;
+    font-family:inherit;transition:.16s;
+  }
+  .fb-btn:active{background:#eceff4}
+  .fb-done{color:#2e7d32;border-color:#c8e6c9;background:#f0f9f0}
+
+  .ai-btn{
+    display:inline-flex;align-items:center;gap:4px;margin-top:9px;margin-left:6px;font-size:12px;
+    color:#7c3aed;background:#f6f2ff;border:1px solid #ddd0f7;border-radius:14px;padding:4px 11px;
+    cursor:pointer;font-family:inherit;transition:.16s;font-weight:500;
+  }
+  .ai-btn:active{background:#ece3fc;transform:scale(.97)}
+  .ai-btn.loading{color:#9a86c4;cursor:wait}
+
+  /* 添加到桌面引导 */
+  .pwa-tip{
+    position:relative;background:linear-gradient(135deg,#eef4fc,#f7f9ff);border:1px solid #cfdff5;
+    border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.7;color:var(--text2);
+    margin:0 0 12px;
+  }
+  .pwa-tip b{color:var(--brand-dark)}
+  .pwa-close{
+    position:absolute;top:6px;right:9px;border:0;background:none;color:#b7c1cd;font-size:15px;
+    cursor:pointer;font-family:inherit;padding:2px;
+  }
 
   /* 相关追问 */
   .related{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
@@ -199,8 +232,8 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261029b"></script>
-<script src="engine.js?v=20261029b"></script>
+<script src="knowledge.js?v=20261029c"></script>
+<script src="engine.js?v=20261029c"></script>
 <script>
 const chat = document.getElementById('chat');
 const input = document.getElementById('q');
@@ -304,11 +337,12 @@ function addTyping(){
 }
 
 /* 渲染一条完整答案 */
-function renderAnswer(item, others){
+function renderAnswer(item, others, userQuery){
   let h = '';
   h += `<div class="ans-q"><span class="n">Q</span><span>${esc(item.q)}</span></div>`;
   h += `<div class="ans-body">${md(item.a)}</div>`;
   h += `<div class="ans-src"><span class="tag">依据原文</span>${esc(item.src)} · 《黄埔区教师资格定期注册培训（2026）》</div>`;
+  h += `<button class="fb-btn" data-q="${esc(userQuery || item.q)}">🤔 没帮到你？点此反馈</button><button class="ai-btn" data-q="${esc(userQuery || item.q)}">✨ 不满意？用 AI 重新回答</button>`;
   if (others && others.length){
     h += `<div class="related"><div class="related-t">可能你还想了解：</div>`;
     for (const o of others.slice(0,3)){
@@ -317,6 +351,21 @@ function renderAnswer(item, others){
     h += `</div>`;
   }
   return h;
+}
+
+/* 反馈按钮：复制问题文本，引导发给管理员 */
+function copyText(t){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(t).catch(()=>legacyCopy(t));
+  }
+  return Promise.resolve(legacyCopy(t));
+}
+function legacyCopy(t){
+  const ta = document.createElement('textarea');
+  ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
 }
 
 /* 主问答流程 */
@@ -331,7 +380,7 @@ function ask(text){
     const r = answer(text);
 
     if (r.type === 'answer'){
-      addBot(renderAnswer(r.main, r.others));
+      addBot(renderAnswer(r.main, r.others, text));
       rememberHistory(text, r.main.a);
     } else {
       // 低置信度 → 大模型增强回答（基于检索到的原文片段）
@@ -354,9 +403,7 @@ function rememberHistory(q, a){
 }
 
 async function aiAnswer(text, r){
-  // 取检索 top5 原文片段作为依据
-  const ctx = (r.list ? r.list.map(x=>x.item) : [])
-    .concat(KNOWLEDGE.slice(0, 0));
+  // 取检索 top5 原文片段作为依据（r 可为 null，即手动点击"AI重新回答"）
   const top = (typeof search === 'function' ? search(text, 5) : []).map(x=>x.item);
   // 材料池兜底：检索分数都很低时，强制附上核心枢纽条目，确保 AI 有可对照的政策原文
   let pool = top;
@@ -430,6 +477,7 @@ ${materials}`;
       }
     }
     rememberHistory(text, full);
+    attachFb(card, text);
     if (!full) throw new Error('空回复');
   } catch(err){
     // 失败 → 回退到原有候选/兜底逻辑
@@ -461,8 +509,28 @@ input.addEventListener('keydown', e=>{
 function autoSize(){ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,110)+'px'; }
 input.addEventListener('input', autoSize);
 
-/* 点击 chip / 候选 */
+/* 点击 chip / 候选 / 反馈 */
 chat.addEventListener('click', e=>{
+  const fb = e.target.closest('.fb-btn');
+  if (fb){
+    const q = fb.dataset.q || '';
+    copyText('【答疑助手问题反馈】' + q).then(()=>{
+      fb.classList.add('fb-done');
+      fb.textContent = '✅ 问题已复制，请粘贴发给管理员';
+      setTimeout(()=>{ fb.classList.remove('fb-done'); fb.innerHTML='🤔 没帮到你？点此反馈'; }, 4000);
+    });
+    return;
+  }
+  const aib = e.target.closest('.ai-btn');
+  if (aib){
+    const q = aib.dataset.q || aib.parentNode.querySelector('.fb-btn')?.dataset.q || '';
+    aib.classList.add('loading');
+    aib.textContent = '⏳ AI 思考中…';
+    // 禁用同卡片其他按钮，避免重复点击
+    aib.parentNode.querySelectorAll('.ai-btn').forEach(b=>{ b.disabled=true; });
+    aiAnswer(q, null);
+    return;
+  }
   const chip = e.target.closest('.chip, .cand, .quick');
   if (!chip) return;
   const id = chip.dataset.id;
@@ -473,12 +541,37 @@ chat.addEventListener('click', e=>{
   setTimeout(()=>{
     tp.remove();
     const others = KNOWLEDGE.filter(k=>k.cat===item.cat && k.id!==item.id).slice(0,3);
-    addBot(renderAnswer(item, others));
+    addBot(renderAnswer(item, others, item.q));
   }, 300);
 });
 
+/* AI 流式回答成功后也追加反馈按钮 */
+function attachFb(card, q){
+  const body = card.querySelector('.ans-body');
+  if (body && !card.querySelector('.fb-btn')){
+    const b = document.createElement('button');
+    b.className = 'fb-btn'; b.dataset.q = q;
+    b.innerHTML = '🤔 没帮到你？点此反馈';
+    body.appendChild(b);
+  }
+}
+
 /* 欢迎页 */
 function welcome(){
+  // 添加到桌面引导（关闭后 7 天内不再显示）
+  if (!localStorage.getItem('pwa_tip_hide')){
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isAndroid = /android/i.test(navigator.userAgent);
+    let steps = '';
+    if (isAndroid) steps = '点浏览器右上角 <b>⋮</b> → 选择 <b>「添加到主屏幕」</b>';
+    else if (isIOS) steps = '点浏览器底部 <b>分享按钮 ⬆️</b> → 选择 <b>「添加到主屏幕」</b>';
+    else steps = '点浏览器地址栏右侧的 <b>⊕ 或 ⋮</b> → <b>「安装」/「添加到主屏幕」</b>';
+    const tip = document.createElement('div');
+    tip.className = 'pwa-tip';
+    tip.innerHTML = `<button class="pwa-close" onclick="localStorage.setItem('pwa_tip_hide','1');this.parentNode.remove()">✕</button>
+      💡 <b>建议把答疑助手添加到手机桌面</b>，以后点图标直接用，不用翻聊天记录：<br>${steps}`;
+    chat.appendChild(tip);
+  }
   let h = `<div class="welcome">
       <div class="wel-h">你好，我是注册答疑助手 👋</div>
       <div class="wel-s">关于 2026 年教师资格定期注册的问题，<br>直接问我，我按官方培训材料原文回答。</div>
