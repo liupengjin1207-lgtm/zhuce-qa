@@ -231,6 +231,82 @@
   #send:disabled{background:#c3ccd8;box-shadow:none;cursor:not-allowed}
   .foot-tip{font-size:10.5px;color:#9aa4b2;text-align:center;margin-top:6px}
 
+  /* ===== 统计入口按钮 ===== */
+  .stats-btn{
+    position:fixed;right:14px;bottom:132px;width:38px;height:38px;border-radius:50%;
+    border:1px solid #dbe6f5;background:rgba(255,255,255,.86);color:#8b97a8;font-size:16px;
+    cursor:pointer;z-index:55;box-shadow:0 2px 8px rgba(31,35,40,.10);transition:.15s;
+    font-family:inherit;line-height:1;
+  }
+  .stats-btn.hot{background:var(--brand-light);color:var(--brand);transform:scale(1.08)}
+
+  /* ===== 统计面板 ===== */
+  .st-mask{position:fixed;inset:0;background:rgba(15,30,55,.55);z-index:80;display:flex;align-items:flex-end;justify-content:center}
+  .st-panel{
+    background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:520px;
+    height:88vh;display:flex;flex-direction:column;
+    animation:stUp .28s ease;
+  }
+  @keyframes stUp{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+  .st-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .st-title{font-size:15px;font-weight:700;color:var(--brand-dark)}
+  .st-close{border:0;background:none;font-size:17px;color:#9aa4b2;cursor:pointer;font-family:inherit;padding:2px 6px}
+  .st-body{flex:1;overflow-y:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch}
+  .st-loading{text-align:center;color:var(--text2);font-size:13px;padding:40px 0}
+  .st-err{text-align:center;color:var(--accent);font-size:13.5px;padding:36px 10px;line-height:1.9}
+
+  .st-login{padding:22px 0}
+  .st-login input{
+    width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d5dfec;border-radius:10px;
+    font-size:14px;font-family:inherit;outline:none;margin-bottom:10px;
+  }
+  .st-login input:focus{border-color:var(--brand)}
+  .st-login button{
+    width:100%;border:0;background:var(--brand);color:#fff;font-size:14px;font-weight:600;
+    padding:11px;border-radius:10px;cursor:pointer;font-family:inherit;
+  }
+  .shake{animation:shake .35s}
+  @keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  .st-cards{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+  .st-card{background:linear-gradient(135deg,#f2f7ff,#f8fbff);border:1px solid #e0eaf8;border-radius:11px;padding:11px 12px}
+  .st-card .n{font-size:22px;font-weight:800;color:var(--brand);line-height:1.2}
+  .st-card .l{font-size:11px;color:var(--text2);margin-top:2px}
+  .st-card.warn{background:linear-gradient(135deg,#fff6ec,#fffaf5);border-color:#f6e0c8}
+  .st-card.warn .n{color:var(--warn)}
+
+  .st-sec{margin-bottom:18px}
+  .st-sec-t{font-size:13px;font-weight:700;color:var(--text);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+  .st-cnt{background:#eef2f8;color:var(--text2);font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px}
+
+  .st-bars{display:flex;align-items:flex-end;gap:4px;height:96px;padding:0 2px;overflow-x:auto}
+  .st-bar-wrap{flex:1;min-width:22px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .st-bar{width:100%;max-width:20px;background:linear-gradient(180deg,#5b9ae4,#1a5fb4);border-radius:3px 3px 0 0;min-height:6px}
+  .st-bar-n{font-size:9.5px;color:var(--brand);font-weight:700;margin-top:2px}
+  .st-bar-d{font-size:8.5px;color:#9aa4b2;margin-top:1px;white-space:nowrap}
+
+  .st-list{display:flex;flex-direction:column;gap:1px}
+  .st-item{display:flex;align-items:flex-start;gap:8px;padding:8px 4px;border-bottom:1px solid #f2f5f9;font-size:13px}
+  .st-item:last-child{border-bottom:0}
+  .st-idx{flex-shrink:0;width:19px;height:19px;border-radius:5px;background:#f0f4fa;color:#8b97a8;
+    font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .st-item.u .st-idx{background:#fdecea;color:var(--accent)}
+  .st-q{flex:1;color:var(--text);line-height:1.5;word-break:break-word}
+  .st-num{flex-shrink:0;font-size:11.5px;color:var(--brand);font-weight:700;margin-top:2px}
+  .st-item.u .st-num{color:var(--accent)}
+  .st-tag{font-style:normal;font-size:9.5px;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:1px}
+  .st-tag.bad{background:#fdecea;color:var(--accent)}
+  .st-tag.warn{background:#fff4e5;color:#a35a00}
+  .st-tag.ai{background:#f0eafb;color:#6b4fa8}
+
+  .st-empty{font-size:12.5px;color:#8b97a8;padding:10px 4px}
+  .st-actions{display:flex;gap:9px;margin-top:6px}
+  .st-actions button{
+    flex:1;border:1px solid #dbe6f5;background:#f7fafd;color:var(--brand);font-size:13px;
+    font-weight:600;padding:10px;border-radius:10px;cursor:pointer;font-family:inherit;
+  }
+  .st-actions button:active{background:#e8f0fb}
+
   /* 打字动画 */
   .typing{display:flex;gap:4px;padding:5px 2px}
   .typing i{width:7px;height:7px;border-radius:50%;background:#b6c3d4;animation:bl 1.3s infinite}
@@ -265,8 +341,9 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261030d"></script>
-<script src="engine.js?v=20261030d"></script>
+<script src="knowledge.js?v=20261031a"></script>
+<script src="engine.js?v=20261031a"></script>
+<script src="stats.js?v=20261031a"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){
@@ -504,8 +581,10 @@ function ask(text){
     if (r.type === 'answer'){
       addBot(renderAnswer(r.main, r.others, text));
       rememberHistory(text, r.main.a);
+      try{ logQuestion(text, 'local', r.main.id); }catch(e){}
     } else {
       // 低置信度 → 大模型增强回答（基于检索到的原文片段）
+      try{ logQuestion(text, r.type === 'candidates' ? 'candidate' : 'fallback', null); }catch(e){}
       aiAnswer(text, r);
     }
   }, 340);
@@ -606,6 +685,7 @@ ${materials}`;
     rememberHistory(text, full);
     attachFb(card, text);
     if (!full) throw new Error('空回复');
+    else { try{ logQuestion(text, 'ai', null); }catch(e){} }
   } catch(err){
     // 失败 → 回退到原有候选/兜底逻辑
     let h;
@@ -700,6 +780,7 @@ function welcome(){
 }
 
 welcome();
+try{ if (typeof initStatsEntry === 'function') initStatsEntry(); }catch(e){}
 </script>
 </body>
 </html>
