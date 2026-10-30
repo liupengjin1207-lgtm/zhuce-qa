@@ -10,7 +10,7 @@
 /* ============ 配置区（只需要改这里） ============ */
 const STATS_CONFIG = {
   /* Supabase 项目地址，形如 https://abcdefgh.supabase.co （结尾不要加 /） */
-  supabaseUrl: "https://www.gqmkjnhacfiiqs.supabase.co",
+  supabaseUrl: "https://wwwgdknmsjnhacfntqxs.supabase.co",
   /* Supabase 的 anon public key（可公开，专门用于前端，受行级权限保护） */
   supabaseKey: "sb_publishable_jH2RJn7denv56scjfR_xhw_xM1JY1dc",
   /* 数据表名，建表时用这个名字 */
