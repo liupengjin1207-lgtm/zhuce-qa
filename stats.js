@@ -187,6 +187,7 @@ async function renderStatsMain(body){
     return;
   }
   const s = analyzeStats(rows);
+  _lastRows = rows; // 保存原始记录，供导出"问题文字版"使用
 
   if (!s.total){
     body.innerHTML = `<div class="st-err" style="color:#5a6371">最近 30 天还没有提问记录<br>
@@ -254,20 +255,20 @@ async function renderStatsMain(body){
   body.innerHTML = html;
 
   body.querySelector('#stRefresh').addEventListener('click', ()=>renderStatsMain(body));
-  body.querySelector('#stExport').addEventListener('click', ()=>exportStatsCSV(s));
+  body.querySelector('#stExport').addEventListener('click', ()=>exportStatsCSV());
 }
 
-function exportStatsCSV(s){
+let _lastRows = [];
+function exportStatsCSV(){
   const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   let csv = '\uFEFF'; // BOM，防 Excel 乱码
-  csv += '=== 概览 ===\n';
-  csv += `总提问次数,${s.total}\n不同问题数,${s.topQ.length}\n提问设备数,${s.devices}\n没答案次数,${s.unresolvedCnt}\n\n`;
-  csv += '=== 没答案的问题 ===\n问题,次数\n';
-  s.topU.forEach(u => { csv += `${esc(u.text)},${u.count}\n`; });
-  csv += '\n=== 高频问题 ===\n问题,次数,回答方式\n';
-  s.topQ.forEach(q => { csv += `${esc(q.text)},${q.count},${q.mode}\n`; });
-  csv += '\n=== 每日趋势 ===\n日期,次数\n';
-  Object.keys(s.byDay).sort().forEach(d => { csv += `${d},${s.byDay[d]}\n`; });
+  // 只导出老师提交的问题原文（按时间正序），不含回答内容
+  csv += '序号,问题,提交时间\n';
+  const rows = _lastRows.slice().sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+  rows.forEach((r, i)=>{
+    const t = String(r.created_at || '').replace('T',' ').slice(0, 16); // 只到分钟
+    csv += `${i+1},${esc(r.question)},${t}\n`;
+  });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
