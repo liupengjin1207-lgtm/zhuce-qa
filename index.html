@@ -343,7 +343,7 @@
 
 <script src="knowledge.js?v=20261031b"></script>
 <script src="engine.js?v=20261031b"></script>
-<script src="stats.js?v=20261031b"></script>
+<script src="stats.js?v=20261101a"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){
@@ -590,11 +590,10 @@ function ask(text){
   }, 340);
 }
 
-/* ============ AI 增强（DeepSeek，经 Cloudflare Worker 代理，Key 不暴露） ============ */
+/* ============ AI 增强（DeepSeek，经 Supabase Edge Function 代理，Key 不暴露） ============ */
 const AI_CONFIG = {
-  /* 部署 Cloudflare Worker 后，把下面换成你的 Worker 地址，
-     形如 https://zhuce-qa-proxy.你的子域名.workers.dev  */
-  proxyUrl: "https://zhuce-qa-proxy.liupengjin1207.workers.dev",
+  /* Supabase 边缘函数地址（部署 ai-proxy 函数后即可用） */
+  proxyUrl: "https://wwwgdknmsjnhacfntqxs.supabase.co/functions/v1/ai-proxy",
   model: "deepseek-chat"
 };
 /* 对话记忆（最近4轮） */
