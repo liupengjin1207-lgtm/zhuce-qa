@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a5fb4">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-startup-image" href="icon-512.png">
@@ -344,6 +347,26 @@
 <script src="knowledge.js?v=20261102c"></script>
 <script src="engine.js?v=20261102c"></script>
 <script src="stats.js?v=20261101b"></script>
+<script>
+/* 版本哨兵：若浏览器缓存的是旧版页面，注销SW并强制刷新一次 */
+(function(){
+  var BUILD = 'v20261102c';
+  try{
+    var seen = localStorage.getItem('qa_build');
+    if (seen !== BUILD){
+      localStorage.setItem('qa_build', BUILD);
+      if (navigator.serviceWorker && navigator.serviceWorker.controller){
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          Promise.all(rs.map(function(r){ return r.unregister(); })).then(function(){
+            location.reload(true);
+          });
+        });
+        return; // 正在刷新，后续脚本不再执行
+      }
+    }
+  }catch(e){}
+})();
+</script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){

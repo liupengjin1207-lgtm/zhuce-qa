@@ -1,5 +1,5 @@
 /* Service Worker：PWA 可安装 + 离线可用 */
-const CACHE = 'zhuce-qa-v3';
+const CACHE = 'zhuce-qa-v6';
 const CORE = ['./index.html','./knowledge.js','./engine.js','./stats.js','./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e=>{
