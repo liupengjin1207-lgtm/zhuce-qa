@@ -326,7 +326,7 @@
     <div class="hd-logo">📋</div>
     <div>
       <div class="hd-title">2026年教师资格定期注册 · 智能答疑</div>
-      <div class="hd-sub">依据《黄埔区教师资格定期注册培训（2026）》自动作答</div>
+      <div class="hd-sub">依据《广州市中小学教师资格定期注册有关问题的解答（2026年）》自动作答</div>
     </div>
   </div>
 </header>
@@ -341,8 +341,8 @@
   <div class="foot-tip">答案依据官方培训材料原文生成，特殊情况请咨询区注册工作办公室</div>
 </footer>
 
-<script src="knowledge.js?v=20261031b"></script>
-<script src="engine.js?v=20261031b"></script>
+<script src="knowledge.js?v=20261102c"></script>
+<script src="engine.js?v=20261102c"></script>
 <script src="stats.js?v=20261101b"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
@@ -540,7 +540,7 @@ function renderAnswer(item, others, userQuery){
   let h = '';
   h += `<div class="ans-q"><span class="n">Q</span><span>${esc(item.q)}</span></div>`;
   h += `<div class="ans-body">${md(item.a)}</div>`;
-  h += `<div class="ans-src"><span class="tag">依据原文</span>${esc(item.src)} · 《黄埔区教师资格定期注册培训（2026）》</div>`;
+  h += `<div class="ans-src"><span class="tag">依据原文</span>${esc(item.src)}</div>`;
   h += `<button class="fb-btn" data-q="${esc(userQuery || item.q)}">🤔 没帮到你？点此反馈</button><button class="ai-btn" data-q="${esc(userQuery || item.q)}">✨ 不满意？用 AI 重新回答</button>`;
   if (others && others.length){
     h += `<div class="related"><div class="related-t">可能你还想了解：</div>`;
@@ -622,7 +622,7 @@ async function aiAnswer(text, r){
 规则：
 1. 只能依据材料片段作答，禁止编造材料里没有的规定、时间、数字
 2. 回答要口语化、条理清晰，重点内容加粗
-3. 回答末尾标注所依据的出处（如：依据：第X页）
+3. 回答末尾标注所依据的出处（如：依据：广州市解答第X条）
 4. 如果材料片段确实没有覆盖用户的问题，直接回答"这个问题培训材料里没有明确写到，建议咨询区教师资格定期注册工作办公室"，不要推测
 5. 结合对话历史理解代词和省略（如"那产假呢"指上一个话题）
 6. 用户描述自己的个人情形时（如"有段时间没上班""考核基本合格"），不要只说范围条款，要对照材料中的暂缓注册四种情形和注册不合格四种情形逐条分析，指出最可能适用的情形、判定标准（时长/等次/原因）和后续处理办法，并提醒关键分界点
