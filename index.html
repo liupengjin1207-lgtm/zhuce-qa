@@ -343,7 +343,7 @@
 
 <script src="knowledge.js?v=20261031b"></script>
 <script src="engine.js?v=20261031b"></script>
-<script src="stats.js?v=20261101a"></script>
+<script src="stats.js?v=20261101b"></script>
 <script>
 /* 注册 Service Worker（PWA 可安装资格） */
 if ('serviceWorker' in navigator){
@@ -594,6 +594,8 @@ function ask(text){
 const AI_CONFIG = {
   /* Supabase 边缘函数地址（部署 ai-proxy 函数后即可用） */
   proxyUrl: "https://wwwgdknmsjnhacfntqxs.supabase.co/functions/v1/ai-proxy",
+  /* Supabase 公开 key（publishable，本就放前端，非 DeepSeek Key） */
+  supabaseKey: "sb_publishable_jH2RJn7denv56scjfR_xhw_xM1JY1dc",
   model: "deepseek-chat"
 };
 /* 对话记忆（最近4轮） */
@@ -648,7 +650,7 @@ ${materials}`;
     const timer = setTimeout(()=>ctrl.abort(), 30000); // 30秒超时保护
     const resp = await fetch(AI_CONFIG.proxyUrl, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+AI_CONFIG.supabaseKey},
       body: JSON.stringify({model: AI_CONFIG.model, messages: msgs, stream: true, temperature: 0.3, max_tokens: 1200}),
       signal: ctrl.signal
     });
